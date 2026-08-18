@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HoverFont",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "Inspect typography on webpages by hovering over text. View font details, check contrast, save fonts, and export your finds.",
   "permissions": [
     "storage",

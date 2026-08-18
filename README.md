@@ -1,4 +1,4 @@
-# HoverFont 1.0.4
+# HoverFont 1.0.6
 
 HoverFont is a free Chrome extension for inspecting typography directly on webpages.
 
@@ -9,6 +9,8 @@ HoverFont is a free Chrome extension for inspecting typography directly on webpa
 - The ON/OFF state persists when you navigate to another webpage or restart Chrome.
 - Toggle from the popup or with `Ctrl+Shift+F` (`Command+Shift+F` on macOS).
 - All current inspection features are free.
+- The detected primary font is shown clearly, with three local similar-font suggestions directly underneath.
+- The full CSS font stack is retained as a smaller technical detail.
 
 ## Local install
 

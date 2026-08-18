@@ -16,6 +16,88 @@
   const TOOLTIP_OFFSET = 14;
   const VIEWPORT_MARGIN = 10;
 
+  const SIMILAR_FONT_MAP = {
+    wiredDisplay: ["Oswald", "Roboto Condensed", "Barlow Condensed"],
+    inter: ["Manrope", "DM Sans", "Roboto"],
+    arial: ["Helvetica", "Roboto", "Liberation Sans"],
+    helvetica: ["Arial", "Inter", "Roboto"],
+    roboto: ["Inter", "Open Sans", "Noto Sans"],
+    "open sans": ["Roboto", "Lato", "Noto Sans"],
+    lato: ["Open Sans", "Roboto", "Source Sans 3"],
+    montserrat: ["Poppins", "Raleway", "Gotham"],
+    poppins: ["Montserrat", "Nunito Sans", "DM Sans"],
+    raleway: ["Montserrat", "Avenir", "Nunito Sans"],
+    "dm sans": ["Inter", "Manrope", "Plus Jakarta Sans"],
+    manrope: ["Inter", "DM Sans", "Plus Jakarta Sans"],
+    "plus jakarta sans": ["Manrope", "DM Sans", "Inter"],
+    avenir: ["Montserrat", "Nunito Sans", "Century Gothic"],
+    futura: ["Century Gothic", "Montserrat", "Avenir"],
+    gotham: ["Montserrat", "Proxima Nova", "Avenir"],
+    "proxima nova": ["Montserrat", "Avenir", "Inter"],
+    nunito: ["Quicksand", "Varela Round", "Nunito Sans"],
+    "nunito sans": ["DM Sans", "Poppins", "Inter"],
+    quicksand: ["Nunito", "Varela Round", "Comfortaa"],
+    oswald: ["Roboto Condensed", "Barlow Condensed", "Bebas Neue"],
+    "roboto condensed": ["Oswald", "Barlow Condensed", "Archivo Narrow"],
+    "barlow condensed": ["Roboto Condensed", "Oswald", "Archivo Narrow"],
+    "bebas neue": ["Oswald", "Anton", "Barlow Condensed"],
+    georgia: ["Merriweather", "Lora", "Libre Baskerville"],
+    "times new roman": ["Libre Baskerville", "Lora", "Source Serif 4"],
+    merriweather: ["Lora", "Libre Baskerville", "Source Serif 4"],
+    lora: ["Merriweather", "Libre Baskerville", "Cormorant Garamond"],
+    garamond: ["Cormorant Garamond", "EB Garamond", "Libre Baskerville"],
+    "courier new": ["Roboto Mono", "IBM Plex Mono", "Source Code Pro"],
+    monospace: ["Roboto Mono", "IBM Plex Mono", "Source Code Pro"]
+  };
+
+  function cleanFontName(fontName) {
+    return String(fontName || "")
+      .replace(/["']/g, "")
+      .trim();
+  }
+
+  function getPrimaryFontName(fontFamily) {
+    return cleanFontName(String(fontFamily || "").split(",")[0]);
+  }
+
+  function getSimilarFonts(fontFamily) {
+    const primaryFont = getPrimaryFontName(fontFamily);
+    const key = primaryFont.toLowerCase();
+
+    if (key === "wireddisplay") {
+      return SIMILAR_FONT_MAP.wiredDisplay;
+    }
+
+    if (SIMILAR_FONT_MAP[key]) {
+      return SIMILAR_FONT_MAP[key];
+    }
+
+    const family = String(fontFamily || "").toLowerCase();
+    const combined = `${key} ${family}`;
+
+    if (/mono|code|courier|console|terminal/.test(combined)) {
+      return ["Roboto Mono", "IBM Plex Mono", "Source Code Pro"];
+    }
+
+    if (/condensed|narrow|compressed|display/.test(combined)) {
+      return ["Oswald", "Roboto Condensed", "Barlow Condensed"];
+    }
+
+    if (/rounded|round|soft/.test(combined)) {
+      return ["Nunito", "Quicksand", "Varela Round"];
+    }
+
+    if (/slab/.test(combined)) {
+      return ["Roboto Slab", "Zilla Slab", "Arvo"];
+    }
+
+    if (/serif/.test(family) && !/sans-serif/.test(family)) {
+      return ["Lora", "Merriweather", "Libre Baskerville"];
+    }
+
+    return ["Inter", "Roboto", "Open Sans"];
+  }
+
   chrome.storage.local.get(["savedFonts"], (result) => {
     if (Array.isArray(result.savedFonts)) {
       savedFonts = new Set(result.savedFonts);
@@ -68,6 +150,37 @@
         padding-bottom: 10px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         color: #ffffff;
+        overflow-wrap: anywhere;
+      }
+
+      .font-identity {
+        margin-bottom: 8px;
+      }
+
+      .primary-font {
+        color: #ffffff;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+
+      .similar-fonts {
+        margin-top: 3px;
+        color: #d7d7d7;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+      }
+
+      .font-stack {
+        margin-top: 7px;
+        color: #9f9f9f;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 9px;
+        line-height: 1.4;
         overflow-wrap: anywhere;
       }
 
@@ -315,14 +428,22 @@
     const color = style.color || "Unknown";
     const backgroundColor = getEffectiveBackgroundColor(element);
 
+    const primaryFont = getPrimaryFontName(fontFamily);
+    const similarFonts = getSimilarFonts(fontFamily);
+
     const details = [
-      `Font: ${fontFamily}`,
       `Size: ${fontSize}`,
       `Weight: ${fontWeight}`,
       `Style: ${fontStyle}`,
       `Line height: ${lineHeight}`,
       `Letter spacing: ${letterSpacing}`,
       `Colour: ${color}`
+    ].join("\n");
+
+    const copyDetails = [
+      `Font: ${primaryFont}`,
+      `Font stack: ${fontFamily}`,
+      ...details.split("\n")
     ].join("\n");
 
     tooltip.replaceChildren();
@@ -335,9 +456,26 @@
     preview.style.fontStyle = fontStyle;
     preview.style.fontSize = "16px";
 
+    const fontIdentity = document.createElement("div");
+    fontIdentity.className = "font-identity";
+
+    const primaryFontLabel = document.createElement("div");
+    primaryFontLabel.className = "primary-font";
+    primaryFontLabel.textContent = primaryFont;
+
+    const similarFontLabel = document.createElement("div");
+    similarFontLabel.className = "similar-fonts";
+    similarFontLabel.textContent = `Similar: ${similarFonts.join(" · ")}`;
+
+    fontIdentity.append(primaryFontLabel, similarFontLabel);
+
     const detailsBlock = document.createElement("pre");
     detailsBlock.className = "details";
     detailsBlock.textContent = details;
+
+    const stackDetail = document.createElement("div");
+    stackDetail.className = "font-stack";
+    stackDetail.textContent = `Font stack: ${fontFamily}`;
 
     const contrast = document.createElement("div");
     contrast.className = "contrast";
@@ -361,7 +499,7 @@
     const copyButton = document.createElement("button");
     copyButton.type = "button";
     copyButton.textContent = "Copy styles";
-    copyButton.addEventListener("click", () => copyToClipboard(details, copyButton));
+    copyButton.addEventListener("click", () => copyToClipboard(copyDetails, copyButton));
 
     const saveButton = document.createElement("button");
     saveButton.type = "button";
@@ -383,11 +521,10 @@
     googleFontLink.rel = "noopener noreferrer";
     googleFontLink.textContent = "Google Fonts";
 
-    const primaryFont = fontFamily.split(",")[0].replace(/["']/g, "").trim();
     googleFontLink.href = `https://fonts.google.com/?query=${encodeURIComponent(primaryFont)}`;
 
     actions.append(copyButton, saveButton, exportButton, googleFontLink);
-    tooltip.append(preview, detailsBlock, contrast, actions);
+    tooltip.append(preview, fontIdentity, detailsBlock, stackDetail, contrast, actions);
     tooltip.style.display = "block";
 
     requestAnimationFrame(() => positionTooltip(pointerX, pointerY));
